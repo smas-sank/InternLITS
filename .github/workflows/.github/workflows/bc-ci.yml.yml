@@ -1,0 +1,38 @@
+name: Business Central AL CI
+
+on:
+  push:
+    branches:
+      - main
+      - "3089-*"
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Download AL Language compiler (ALC)
+      - name: Download AL Compiler
+        run: |
+          mkdir alc
+          Invoke-WebRequest -Uri "https://bcartifacts.azureedge.net/sandbox/23.3.12017.12994/al-compiler.zip" -OutFile "alc.zip"
+          Expand-Archive alc.zip -DestinationPath alc
+
+      # Build .app file
+      - name: Build Extension
+        run: |
+          .\alc\alc.exe /project:"." /packagecachepath:"./.alpackages" /out:"./output/MyExtension.app"
+
+      # Upload artifact
+      - name: Upload .app artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: AL-App
+          path: ./output/MyExtension.app
